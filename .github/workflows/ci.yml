@@ -92,6 +92,17 @@ jobs:
             find "$kit/share" -print >&2
             exit 1
           fi
+      # Fork arm: pinned SDK tree gets a fixed mtime so restored DerivedData stays valid.
+      - name: Pin SDK tree mtimes
+        run: |
+          find .deps/runanywhere-sdks -type f -not -path '*/.git/*' -exec touch -t 202001010000 {} +
+          defaults write com.apple.dt.XCBuild IgnoreFileSystemDeviceInodeChanges -bool YES
+      - name: Cache xcodebuild DerivedData
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9
+        with:
+          path: swift/.build/xcode
+          key: xcode-mlx-macos-arm64-${{ hashFiles('swift/Package.resolved', 'swift/Package.swift', '.github/workflows/ci.yml') }}
+          restore-keys: xcode-mlx-macos-arm64-
       - uses: ./.github/actions/build-wally
         with:
           platform: macos-arm64
